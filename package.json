@@ -1,0 +1,15 @@
+{
+  "name": "auditoria-seguranca",
+  "version": "1.0.0",
+  "description": "Trabalho da disciplina de Auditoria e Seguranca",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "auditoria-seguranca",
+    "ufc"
+  ],
+  "author": "",
+  "license": "MIT"
+}
