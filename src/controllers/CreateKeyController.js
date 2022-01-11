@@ -1,10 +1,27 @@
 import express from "express";
-import crypto from 'crypto';
+import { generateKeyPair } from "crypto";
 
 export async function CreateKey(req, res) {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-    modulusLength: 2048,
-  });
+  generateKeyPair(
+    "rsa",
+    {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: "spki",
+        format: "pem",
+      },
+      privateKeyEncoding: {
+        type: "pkcs8",
+        format: "pem",
+        cipher: "aes-256-cbc",
+        passphrase: "top secret",
+      },
+    },
+    (err, publicKey, privateKey) => {
+      // Handle errors and use the generated key pair.
+      console.log(publicKey);
+    }
+  );
 
-  return res.status(200).json({ publicKey, privateKey }); 
+  return res.status(200).json({ publicKey, privateKey });
 }
