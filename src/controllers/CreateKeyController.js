@@ -18,10 +18,7 @@ export async function CreateKey(req, res) {
       },
     },
     (err, publicKey, privateKey) => {
-      // Handle errors and use the generated key pair.
-      console.log(publicKey);
+      return res.status(200).json({ publicKey: publicKey, privateKey: privateKey });
     }
   );
-
-  return res.status(200).json({ publicKey, privateKey });
 }
