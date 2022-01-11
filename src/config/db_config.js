@@ -1,7 +1,7 @@
 import "dotenv/config";
 import mysql from 'mysql';
 
-const connMysql = mysql.createConnection({
+const connMysql = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
