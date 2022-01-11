@@ -4,12 +4,24 @@
   "description": "Trabalho da disciplina de Auditoria e Seguranca",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "babel-node src/server.js",
+    "start": "nodemon --exec npm run serve"
   },
   "keywords": [
     "auditoria-seguranca",
     "ufc"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "nodemon": "^2.0.15"
+  }
 }
