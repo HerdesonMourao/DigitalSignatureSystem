@@ -2,15 +2,16 @@ import express from "express";
 import connMysql from "../config/db_config";
 import * as crypto from 'crypto';
 
-export async function CreateMessage(req, res) {
+export async function CreateMessageEncrypted(req, res) {
   try {
     //id_sender e o id_recipient do public_key_communication.
     const { id_sender, id_recipient, message } = req.body;
     
     const searchIdSender = "SELECT * FROM public_key_communication WHERE id_sender = ? AND id_recipient = ?";
-    const searchPrivateKey = "SELECT * FROM client WHERE id = ?";
+    //const searchPrivateKey = "SELECT * FROM client WHERE id = ?";
     
     await connMysql.query(searchIdSender, [id_recipient, id_sender], (err, rows) => {
+      //mensagem criptografada
       const messageEncrypted = crypto.publicEncrypt(
         {
           key: rows[0].public_key_sender,
@@ -20,24 +21,49 @@ export async function CreateMessage(req, res) {
         Buffer.from(message)
       );
 
-      connMysql.query(searchPrivateKey, [id_sender], (err, rowsTwo) => {
-        console.log(rowsTwo.length);
-        console.log(rowsTwo)
-        console.log(rowsTwo[0].private_key)
-        const signature = crypto.sign("sha256", Buffer.from(message), {
-          key: rowsTwo[0].private_key,
-          padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-        });
+      const messageEncryptedBase64 = messageEncrypted.toString('base64');
+      
+      // connMysql.query(searchPrivateKey, [id_sender], (err, rowsTwo) => {
+      //   let signer = crypto.createSign('RSA-SHA256');
 
-        console.log('3', signature.toString("base64"));
-      });
+      //   console.log('1',signer);
+
+      //   let x = signer.write(message);
+      //   signer.end()
+      //   console.log('2',x)
+
+      //   let c = signer.sign(rowsTwo[0].private_key, 'base64');
+
+      //   console.log(c)
+      //   // let a = rowsTwo[0].private_key;
+
+      //   // let teste = signer.sign(a, 'base64');
+
+      //   // console.log('2', teste)
+      // });
 
       // console.log('1', messageEncrypted);
       // console.log('2', messageEncrypted.toString("base64"));
       
-      return res.status(200).json({ message: 'oi' });
+      const senderMessageEncrypted = "INSERT INTO message (id_sender, id_recipient, message) VALUES (?, ?, ?)";
+
+      connMysql.query(senderMessageEncrypted, [
+        id_sender,
+        id_recipient,
+        messageEncryptedBase64
+      ]);
+
+      return res.status(200).json({ message: 'mensagem enviada' });
     });
   } catch (error) {
     return res.status(400).json({ messsage: error });
+  }
+}
+
+export async function ReadMessageDecrypted(req, res) {
+  try {
+    const searchMessage = "SELECT * FROM message WHERE id = ?";
+  } catch (error) {
+    return res.status(400).json({ message: error });
   }
 }
