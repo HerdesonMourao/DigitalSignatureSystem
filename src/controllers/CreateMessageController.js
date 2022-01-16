@@ -21,7 +21,7 @@ export async function CreateMessageEncrypted(req, res) {
         Buffer.from(message)
       );
 
-      const messageEncryptedBase64 = messageEncrypted.toString('base64');
+      //const messageEncryptedBase64 = messageEncrypted.toString('base64');
       
       // connMysql.query(searchPrivateKey, [id_sender], (err, rowsTwo) => {
       //   let signer = crypto.createSign('RSA-SHA256');
@@ -50,7 +50,7 @@ export async function CreateMessageEncrypted(req, res) {
       connMysql.query(senderMessageEncrypted, [
         id_sender,
         id_recipient,
-        messageEncryptedBase64
+        messageEncrypted
       ]);
 
       return res.status(200).json({ message: 'mensagem enviada' });
@@ -62,7 +62,31 @@ export async function CreateMessageEncrypted(req, res) {
 
 export async function ReadMessageDecrypted(req, res) {
   try {
+    const { id_message } = req.body;
+
     const searchMessage = "SELECT * FROM message WHERE id = ?";
+    const searchPrivateKey = "SELECT * FROM client WHERE id = ?";
+
+    await connMysql.query(searchMessage, [id_message], (err, rows) => {
+      console.log(rows)
+      connMysql.query(searchPrivateKey, [rows[0].id_recipient], (err, rowsTwo) => {
+        const readMessageDecrypted = crypto.privateDecrypt(
+          {
+            key: rowsTwo[0].private_key,
+            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+            oaepHash: "sha256",
+          },
+          rows[0].message,
+        );
+
+        console.log("decrypted data: ", readMessageDecrypted.toString());
+        
+        const message = readMessageDecrypted.toString();
+
+        return res.status(200).json({ message: message });
+      });
+    });
+
   } catch (error) {
     return res.status(400).json({ message: error });
   }
