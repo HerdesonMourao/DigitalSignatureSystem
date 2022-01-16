@@ -1,6 +1,6 @@
 import express from "express";
 import connMysql from "../config/db_config";
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 
 export async function CreateMessageEncrypted(req, res) {
   try {
