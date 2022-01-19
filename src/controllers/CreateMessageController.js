@@ -9,6 +9,7 @@ export async function CreateMessageEncrypted(req, res) {
     
     const searchIdSender = "SELECT * FROM public_key_communication WHERE id_sender = ? AND id_recipient = ?";
     const searchPrivateKey = "SELECT * FROM client WHERE id = ?";
+    const senderMessageEncrypted = "INSERT INTO message (id_sender, id_recipient, message, signature) VALUES (?, ?, ?, ?)";
     
     await connMysql.query(searchIdSender, [id_recipient, id_sender], async (err, rows) => {
       //mensagem criptografada
@@ -23,46 +24,22 @@ export async function CreateMessageEncrypted(req, res) {
 
       const messageEncryptedBase64 = messageEncrypted.toString('base64');
       
-      await connMysql.query(searchPrivateKey, [id_sender], (err, rowsTwo) => {
-        // const signature = crypto.sign("sha256", Buffer.from(message), {
-        //   key: rowsTwo[0].private_key,
-        //   padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-        // })
+      await connMysql.query(searchPrivateKey, [id_sender], async (err, rowsTwo) => {
+        const signature = crypto.sign("sha256", Buffer.from(messageEncryptedBase64), {
+          key: rowsTwo[0].private_key,
+          padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+          passphrase: "top secret"
+        })
 
-        // console.log('112 => ', signature.toString('base64'));
+        const sign = signature.toString(`base64`);
 
-        let signer = crypto.createSign('RSA-SHA256');
-        signer.update(message);
-        console.log(signer.sign(rowsTwo[0].private_key, 'hex'));
-
-        // console.log('1',signer);
-
-        // let x = signer.write(message);
-        // signer.end()
-        // console.log('2',x)
-
-        // let c = signer.sign(rowsTwo[0].private_key, 'base64');
-
-        // console.log(c)
-        // let a = rowsTwo[0].private_key;
-
-        // let teste = signer.sign(a, 'base64');
-
-        // console.log('2', teste)
-
-        // let mode = crypto.RSA_PKCS1_SHA256;
-        // let message = messageEncrypted;
-        // let key = rowsTwo[0].private_key;
-
-        // crypto.sign(mode, message, key, (err, signature) => {
-        //   console.log('122 = ', signature)
-        // })
+        await connMysql.query(senderMessageEncrypted, [
+          id_sender,
+          id_recipient,
+          messageEncrypted,
+          signature
+        ]);
       });
-
-      //console.log('1', messageEncrypted);
-      //console.log('2', messageEncrypted.toString("base64"));
-      
-      
 
       return res.status(200).json({ message: 'mensagem enviada' });
     });
@@ -78,21 +55,34 @@ export async function ReadMessageDecrypted(req, res) {
     const searchMessage = "SELECT * FROM message WHERE id = ?";
     const searchPrivateKey = "SELECT * FROM client WHERE id = ?";
 
-    await connMysql.query(searchMessage, [id_message], (err, rows) => {
-      console.log(rows)
-      connMysql.query(searchPrivateKey, [rows[0].id_recipient], (err, rowsTwo) => {
-        const readMessageDecrypted = crypto.privateDecrypt(
-          {
-            key: rowsTwo[0].private_key,
-            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-            oaepHash: "sha256",
-          },
-          rows[0].message,
-        );
+    await connMysql.query(searchMessage, [id_message], async (err, rows) => {
+      await connMysql.query(searchPrivateKey, [rows[0].id_recipient], async (err, rowsTwo) => {
+        // const readMessageDecrypted = crypto.privateDecrypt(
+        //   {
+        //     key: rowsTwo[0].private_key,
+        //     padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        //     oaepHash: "sha256",
+        //     passphrase: "top secret",
+        //   },
+        //   Buffer.from(rows[0].message)
+        // );
+  
+        // console.log("decrypted data: ", readMessageDecrypted.toString());
+          
+        // const message = readMessageDecrypted.toString();
+        const signature = Buffer.from(rows[0].sign);
 
-        console.log("decrypted data: ", readMessageDecrypted.toString());
-        
-        const message = readMessageDecrypted.toString();
+        const isVerified = crypto.verify(
+          "sha256",
+          rows[0].message,
+          {
+            key: rowsTwo[0].public_key,
+            padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+          },
+          signature
+        )
+
+        console.log(`112 `, isVerified)
 
         return res.status(200).json({ message: message });
       });
