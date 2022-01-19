@@ -1,12 +1,13 @@
 import express from "express";
-import { generateKeyPair } from "crypto";
+import { generateKeyPairSync } from "crypto";
 import connMysql from "../config/db_config";
 
 export async function CreateKey(req, res) {
-  generateKeyPair(
-    "rsa",
-    {
-      modulusLength: 4096,
+  try {
+    const { name } = req.body;
+
+    const {publicKey, privateKey} = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
       publicKeyEncoding: {
         type: "spki",
         format: "pem",
@@ -17,23 +18,18 @@ export async function CreateKey(req, res) {
         cipher: "aes-256-cbc",
         passphrase: "top secret",
       },
-    },
-    (err, publicKey, privateKey) => {
+    });
+  
+    const register = "INSERT INTO client (name, public_key, private_key) VALUES (?,?,?)";
+  
+    const data = await connMysql.query(register, [
+      name,
+      publicKey,
+      privateKey,
+    ]);
 
-      const { name } = req.body;
-
-      const register = "INSERT INTO client (name, public_key, private_key) VALUES (?,?,?)";
-
-      const public_key = publicKey;
-      const private_key = privateKey;
-      
-      connMysql.query(register, [
-        name,
-        public_key,
-        private_key,
-      ]);
-
-      return res.status(200).json({ publicKey: publicKey, privateKey: privateKey });
-    }
-  );
+    return res.status(200).json({ publicKey: publicKey, privateKey: privateKey});
+  } catch (error) {
+    return res.status(400).json({ message: 'ocorreu um erro' });
+  }
 }
