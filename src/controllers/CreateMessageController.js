@@ -39,6 +39,18 @@ export async function CreateMessageEncrypted(req, res) {
           messageEncryptedBase64,
           sign
         ]);
+
+        const isVerified = crypto.verify(
+          "sha256",
+          Buffer.from(messageEncryptedBase64),
+          {
+            key: rowsTwo[0].public_key,
+            padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+          },
+          signature
+        )
+
+        console.log(`112 `, isVerified)
       });
 
       return res.status(200).json({ message: 'mensagem enviada' });
@@ -71,20 +83,18 @@ export async function ReadMessageDecrypted(req, res) {
           
         // const message = readMessageDecrypted.toString();
         
-        const signature = Buffer.from(rows[0].sign);
-        const message = rows[0].message
+        
+        // const isVerified = crypto.verify(
+        //   "sha256",
+        //   Buffer.from(rows[0].message),
+        //   {
+        //     key: rowsTwo[0].public_key,
+        //     padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+        //   },
+        //   rows[0].sign
+        // )
 
-        const isVerified = crypto.verify(
-          "sha256",
-          Buffer.from(message),
-          {
-            key: rowsTwo[0].public_key,
-            padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-          },
-          signature
-        )
-
-        console.log(`112 `, isVerified)
+        // console.log(`112 `, isVerified)
 
         return res.status(200).json({ message: message });
       });
