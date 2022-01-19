@@ -36,8 +36,8 @@ export async function CreateMessageEncrypted(req, res) {
         await connMysql.query(senderMessageEncrypted, [
           id_sender,
           id_recipient,
-          messageEncrypted,
-          signature
+          messageEncryptedBase64,
+          sign
         ]);
       });
 
@@ -70,11 +70,13 @@ export async function ReadMessageDecrypted(req, res) {
         // console.log("decrypted data: ", readMessageDecrypted.toString());
           
         // const message = readMessageDecrypted.toString();
+        
         const signature = Buffer.from(rows[0].sign);
+        const message = rows[0].message
 
         const isVerified = crypto.verify(
           "sha256",
-          rows[0].message,
+          Buffer.from(message),
           {
             key: rowsTwo[0].public_key,
             padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
